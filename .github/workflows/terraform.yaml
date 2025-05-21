@@ -56,7 +56,7 @@ jobs:
         # This will allow the workflow to continue even if the plan fails
         
       - name: Apply Terraform
-        if: steps.plan.outcome == 'failure'
+        if: steps.plan.outcome == 'failure' || steps.plan.outcome == 'success'
         run: exit 1
         # This will exit the workflow with an error if the plan fails
         # This is to prevent applying changes if the plan fails
