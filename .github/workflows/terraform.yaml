@@ -54,9 +54,37 @@ jobs:
         run: terraform plan -no-color -input=false -out=planfile
         continue-on-error: true
         # This will allow the workflow to continue even if the plan fails
-        
-      - name: Apply Terraform
-        if: steps.plan.outcome == 'failure' || steps.plan.outcome == 'success'
-        run: exit 1
-        # This will exit the workflow with an error if the plan fails
-        # This is to prevent applying changes if the plan fails
+
+      - name: Terraform plan status
+        if: steps.plan.outcome == 'failure'
+        run: |
+          echo "Terraform plan failed. Exiting with error."
+          exit 1
+        # This will allow the workflow to continue even if the plan fails
+    
+
+      #- name: Apply Terraform
+        #id: apple
+        #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        #run: terraform apply -input=false -auto-approve -parallelism=1 planfile
+        # This will apply the changes only if the branch is main and the event is a push
+        # This will apply the changes only if the branch is main and the event is a push
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Configure kubeconfig
+        id: getconfig
+        if: steps.apple.outcome == 'success'
+        run: |
+          aws eks --region ${{ env.AWS_REGION }} update-kubeconfig --name ${{ env.EKS_CLUSTER }}
+
+     # - name: Setup Ingress controller
+      #  id: setup-ingress
+      #  if: steps.apple.outcome == 'success' && steps.getconfig.outcome == 'success'
+      #  run: |
+      #    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.3/deploy/static/provider/aws/deploy.yaml
